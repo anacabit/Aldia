@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Plato del Día</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
+    /* PANTALLA LOGIN */
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .login-box {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 350px;
+      text-align: center;
+    }
+    
+    .login-box h1 {
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+    
+    .login-box input {
+      width: 100%;
+      padding: 15px;
+      margin-bottom: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    .login-box input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .login-box button {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .login-box button:active {
+      transform: scale(0.98);
+    }
+    
+    .login-error {
+      color: #e74c3c;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    
+    /* PANTALLA PRINCIPAL */
+    .app-container {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 10px;
+      overflow: hidden;
+    }
+    
+    .app-container.active {
+      display: flex;
+    }
+    
+    .header {
+      text-align: center;
+      color: white;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    
+    .restaurant-name {
+      font-size: 26px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .restaurant-info {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+    
+    .fecha {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 15px;
+      flex-shrink: 0;
+    }
+    
+    .plato-section {
+      text-align: center;
+    }
+    
+    .plato-label {
+      color: #667eea;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    
+    .plato-nombre {
+      color: #333;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    
+    .plato-descripcion {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    
+    .plato-precio {
+      color: #764ba2;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    
+    /* CARRUSEL */
+    .carousel-container {
+      flex: 1;
+      overflow: hidden;
+      border-radius: 15px;
+      margin-bottom: 15px;
+      min-height: 250px;
+    }
+    
+    .carousel {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scroll-snap-type: x mandatory;
+    }
+    
+    .carousel::-webkit-scrollbar {
+      height: 5px;
+    }
+    
+    .carousel::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .carousel::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.6);
+      border-radius: 10px;
+    }
+    
+    .carousel-item {
+      flex-shrink: 0;
+      width: 100%;
+      height: 100%;
+      scroll-snap-align: start;
+      background-size: cover;
+      background-position: center;
+    }
+    
+    /* BOTONES */
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .btn {
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+      text-align: center;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-menu {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      grid-column: 1 / 2;
+    }
+    
+    .btn-llamar {
+      background: #27ae60;
+      color: white;
+    }
+    
+    .btn-admin {
+      background: #95a5a6;
+      color: white;
+      grid-column: 2 / 3;
+    }
+    
+    .btn-logout {
+      background: #e74c3c;
+      color: white;
+      grid-column: 1 / -1;
+    }
+    
+    /* QR */
+    .qr-section {
+      background: white;
+      border-radius: 15px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .qr-label {
+      color: #667eea;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    /* MODAL ADMIN */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      overflow-y: auto;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
+    .modal.active {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 20px;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-content h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      color: #555;
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 13px;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .foto-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .foto-input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .foto-input-group label {
+      font-size: 11px;
+      margin-bottom: 3px;
+    }
+    
+    .foto-input-group input[type="file"] {
+      padding: 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    
+    .foto-preview {
+      width: 100%;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-top: 5px;
+    }
+    
+    .color-picker-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .color-input-hidden {
+      width: 50px;
+      height: 50px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    
+    .color-picker-wheel {
+      flex: 1;
+      height: 50px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, 
+        #FF0000 0%, #FF7F00 14%, #FFFF00 28%, #00FF00 42%, 
+        #0000FF 57%, #4B0082 71%, #9400D3 85%, #FF0000 100%);
+      cursor: pointer;
+      border: 2px solid #ddd;
+      transition: transform 0.2s;
+    }
+    
+    .color-picker-wheel:active {
+      transform: scale(0.98);
+    }
+    
+    .color-preview {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      flex-shrink: 0;
+    }
+    
+    .modal-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .modal-buttons button {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .modal-buttons button:active {
+      transform: scale(0.95);
+    }
+    
+    .btn-guardar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      grid-column: 1 / -1;
+    }
+    
+    .btn-cerrar-modal {
+      background: #e0e0e0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<!-- PANTALLA LOGIN -->
+<div class="login-container" id="loginScreen">
+  <div class="login-box">
+    <h1>🍽️ Acceso</h1>
+    <input type="text" id="usuario" placeholder="Usuario" value="admin">
+    <input type="password" id="clave" placeholder="Contraseña" value="admin">
+    <button onclick="login()">Entrar</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- PANTALLA PRINCIPAL -->
+<div class="app-container" id="appScreen">
+  <div class="header">
+    <div class="restaurant-name" id="nombreRestaurant">Mi Restaurant</div>
+    <div class="restaurant-info" id="telefonoRestaurant">📞 +58 XXX-XXXX</div>
+    <div class="fecha" id="fechaHoy"></div>
+  </div>
+  
+  <div class="card plato-section">
+    <div class="plato-label">Especialidad del Día</div>
+    <div class="plato-nombre" id="platoNombre">Plato del Día</div>
+    <div class="plato-descripcion" id="platoDescripcion">Descripción del plato</div>
+    <div class="plato-precio" id="platoprecio">$0.00</div>
+  </div>
+  
+  <div class="carousel-container">
+    <div class="carousel" id="carousel">
+      <!-- Las fotos se cargan aquí -->
+    </div>
+  </div>
+  
+  <div class="qr-section">
+    <div class="qr-label">Escanea para ordenar</div>
+    <div id="qrcode"></div>
+  </div>
+  
+  <div class="button-group">
+    <button class="btn btn-menu" onclick="abrirMenu()">📋 Menú</button>
+    <button class="btn btn-llamar" onclick="hacerLlamada()">☎️ Llamar</button>
+    <button class="btn btn-admin" onclick="abrirAdmin()">⚙️ Admin</button>
+  </div>
+  
+  <button class="btn btn-logout" onclick="logout()">🚪 Cerrar Sesión</button>
+</div>
+
+<!-- MODAL ADMIN -->
+<div class="modal" id="adminModal">
+  <div class="modal-content">
+    <h2>Panel de Administración</h2>
+    
+    <div class="form-group">
+      <label>Nombre del Restaurant</label>
+      <input type="text" id="adminNombre" placeholder="Mi Restaurant">
+    </div>
+    
+    <div class="form-group">
+      <label>Teléfono</label>
+      <input type="tel" id="adminTelefono" placeholder="+58 XXX-XXXX">
+    </div>
+    
+    <div class="form-group">
+      <label>Plato del Día</label>
+      <input type="text" id="adminPlatoNombre" placeholder="Nombre del plato">
+    </div>
+    
+    <div class="form-group">
+      <label>Descripción</label>
+      <textarea id="adminPlatoDesc" placeholder="Ingredientes y preparación"></textarea>
+    </div>
+    
+    <div class="form-group">
+      <label>Precio</label>
+      <input type="text" id="adminPrecio" placeholder="$00.00">
+    </div>
+    
+    <div class="form-group">
+      <label>Link del Menú (WhatsApp, Google, etc)</label>
+      <input type="url" id="adminLinkMenu" placeholder="https://...">
+    </div>
+    
+    <div class="form-group">
+      <label>Carga las 6 Fotos desde tu PC</label>
+      <div class="foto-inputs" id="fotoInputs">
+        <div class="foto-input-group">
+          <label>Foto 1</label>
+          <input type="file" accept="image/*" id="fotoFile1" onchange="previewFoto(1)">
+          <img id="preview1" class="foto-preview" style="display:none;">
+        </div>
+        <div class="foto-input-group">
+          <label>Foto 2</label>
+          <input type="file" accept="image/*" id="fotoFile2" onchange="previewFoto(2)">
+          <img id="preview2" class="foto-preview" style="display:none;">
+        </div>
+        <div class="foto-input-group">
+          <label>Foto 3</label>
+          <input type="file" accept="image/*" id="fotoFile3" onchange="previewFoto(3)">
+          <img id="preview3" class="foto-preview" style="display:none;">
+        </div>
+        <div class="foto-input-group">
+          <label>Foto 4</label>
+          <input type="file" accept="image/*" id="fotoFile4" onchange="previewFoto(4)">
+          <img id="preview4" class="foto-preview" style="display:none;">
+        </div>
+        <div class="foto-input-group">
+          <label>Foto 5</label>
+          <input type="file" accept="image/*" id="fotoFile5" onchange="previewFoto(5)">
+          <img id="preview5" class="foto-preview" style="display:none;">
+        </div>
+        <div class="foto-input-group">
+          <label>Foto 6</label>
+          <input type="file" accept="image/*" id="fotoFile6" onchange="previewFoto(6)">
+          <img id="preview6" class="foto-preview" style="display:none;">
+        </div>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Color Inicio del Gradiente</label>
+      <div class="color-picker-container">
+        <input type="color" id="adminColorFondo1" value="#667eea" class="color-input-hidden">
+        <div class="color-picker-wheel" id="colorPicker1"></div>
+        <div class="color-preview" id="colorPreview1" style="background: #667eea;"></div>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Color Fin del Gradiente</label>
+      <div class="color-picker-container">
+        <input type="color" id="adminColorFondo2" value="#764ba2" class="color-input-hidden">
+        <div class="color-picker-wheel" id="colorPicker2"></div>
+        <div class="color-preview" id="colorPreview2" style="background: #764ba2;"></div>
+      </div>
+    </div>
+    
+    <div class="modal-buttons">
+      <button class="btn-guardar" onclick="guardarAdmin()">💾 Guardar</button>
+      <button class="btn-cerrar-modal" onclick="cerrarAdmin()">❌ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Datos por defecto
+  let datosRestaurant = {
+    nombre: 'Mi Restaurant',
+    telefono: '+58 XXX-XXXX',
+    platoNombre: 'Ceviche Clásico',
+    platoDesc: 'Fresco pescado marinado en limón, con aguacate, cebolla y cilantro',
+    precio: '$12.50',
+    linkMenu: 'https://wa.me/5812234567890',
+    fotos: [
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&h=500&fit=crop',
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop',
+      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=500&h=500&fit=crop',
+      'https://images.unsplash.com/photo-1467521967604-4b852d45057f?w=500&h=500&fit=crop',
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=500&fit=crop',
+      'https://images.unsplash.com/photo-1505252585461-04db1267ae5b?w=500&h=500&fit=crop'
+    ],
+    colorFondo1: '#667eea',
+    colorFondo2: '#764ba2'
+  };
+  
+  let credenciales = {
+    usuario: 'admin',
+    clave: 'admin'
+  };
+  
+  // Cargar datos del localStorage
+  function cargarDatos() {
+    const guardado = localStorage.getItem('platoDelDia_datos');
+    if (guardado) {
+      datosRestaurant = JSON.parse(guardado);
+    }
+    const guardadoCredenciales = localStorage.getItem('platoDelDia_credenciales');
+    if (guardadoCredenciales) {
+      credenciales = JSON.parse(guardadoCredenciales);
+    }
+  }
+  
+  function guardarDatos() {
+    localStorage.setItem('platoDelDia_datos', JSON.stringify(datosRestaurant));
+  }
+  
+  function guardarCredenciales() {
+    localStorage.setItem('platoDelDia_credenciales', JSON.stringify(credenciales));
+  }
+  
+  // LOGIN
+  function login() {
+    const usuario = document.getElementById('usuario').value;
+    const clave = document.getElementById('clave').value;
+    
+    if (usuario === credenciales.usuario && clave === credenciales.clave) {
+      localStorage.setItem('sesionActiva', 'true');
+      mostrarApp();
+    } else {
+      document.getElementById('loginError').textContent = '❌ Usuario o contraseña incorrectos';
+      setTimeout(() => {
+        document.getElementById('loginError').textContent = '';
+      }, 3000);
+    }
+  }
+  
+  function logout() {
+    localStorage.removeItem('sesionActiva');
+    location.reload();
+  }
+  
+  function mostrarApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').classList.add('active');
+    actualizarUI();
+    generarQR();
+  }
+  
+  // ACTUALIZAR UI
+  function actualizarUI() {
+    document.getElementById('nombreRestaurant').textContent = datosRestaurant.nombre;
+    document.getElementById('telefonoRestaurant').textContent = '📞 ' + datosRestaurant.telefono;
+    document.getElementById('platoNombre').textContent = datosRestaurant.platoNombre;
+    document.getElementById('platoDescripcion').textContent = datosRestaurant.platoDesc;
+    document.getElementById('platoprecio').textContent = datosRestaurant.precio;
+    
+    // Fecha
+    const hoy = new Date();
+    const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const fechaTexto = `${diasSemana[hoy.getDay()]} ${hoy.getDate()} de ${meses[hoy.getMonth()]}`;
+    document.getElementById('fechaHoy').textContent = fechaTexto;
+    
+    // Carrusel
+    const carousel = document.getElementById('carousel');
+    carousel.innerHTML = '';
+    datosRestaurant.fotos.forEach((foto, index) => {
+      if (foto) {
+        const item = document.createElement('div');
+        item.className = 'carousel-item';
+        item.style.backgroundImage = `url('${foto}')`;
+        carousel.appendChild(item);
+      }
+    });
+    
+    // Fondo
+    const gradiente = `linear-gradient(135deg, ${datosRestaurant.colorFondo1} 0%, ${datosRestaurant.colorFondo2} 100%)`;
+    document.body.style.background = gradiente;
+  }
+  
+  // QR
+  function generarQR() {
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+      text: datosRestaurant.linkMenu,
+      width: 150,
+      height: 150,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+  
+  // ADMIN
+  function previewFoto(numero) {
+    const input = document.getElementById(`fotoFile${numero}`);
+    const preview = document.getElementById(`preview${numero}`);
+    
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        datosRestaurant.fotos[numero - 1] = e.target.result;
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+  
+  function inicializarColorPicker(pickerId, inputId, previewId) {
+    const picker = document.getElementById(pickerId);
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    
+    picker.addEventListener('click', (e) => {
+      const rect = picker.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentX = Math.max(0, Math.min(100, (x / rect.width) * 100));
+      
+      const colors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3', '#FF0000'];
+      const colorIndex = Math.floor((percentX / 100) * (colors.length - 1));
+      const color = colors[colorIndex];
+      
+      input.value = color;
+      preview.style.background = color;
+      
+      if (pickerId === 'colorPicker1') {
+        datosRestaurant.colorFondo1 = color;
+      } else {
+        datosRestaurant.colorFondo2 = color;
+      }
+    });
+  }
+  
+  function abrirAdmin() {
+    document.getElementById('adminNombre').value = datosRestaurant.nombre;
+    document.getElementById('adminTelefono').value = datosRestaurant.telefono;
+    document.getElementById('adminPlatoNombre').value = datosRestaurant.platoNombre;
+    document.getElementById('adminPlatoDesc').value = datosRestaurant.platoDesc;
+    document.getElementById('adminPrecio').value = datosRestaurant.precio;
+    document.getElementById('adminLinkMenu').value = datosRestaurant.linkMenu;
+    document.getElementById('adminColorFondo1').value = datosRestaurant.colorFondo1;
+    document.getElementById('adminColorFondo2').value = datosRestaurant.colorFondo2;
+    document.getElementById('colorPreview1').style.background = datosRestaurant.colorFondo1;
+    document.getElementById('colorPreview2').style.background = datosRestaurant.colorFondo2;
+    
+    // Mostrar previsualizaciones de fotos
+    datosRestaurant.fotos.forEach((foto, index) => {
+      if (foto && foto.startsWith('data:')) {
+        const preview = document.getElementById(`preview${index + 1}`);
+        preview.src = foto;
+        preview.style.display = 'block';
+      }
+    });
+    
+    inicializarColorPicker('colorPicker1', 'adminColorFondo1', 'colorPreview1');
+    inicializarColorPicker('colorPicker2', 'adminColorFondo2', 'colorPreview2');
+    
+    document.getElementById('adminModal').classList.add('active');
+  }
+  
+  function cerrarAdmin() {
+    document.getElementById('adminModal').classList.remove('active');
+  }
+  
+  function guardarAdmin() {
+    datosRestaurant.nombre = document.getElementById('adminNombre').value;
+    datosRestaurant.telefono = document.getElementById('adminTelefono').value;
+    datosRestaurant.platoNombre = document.getElementById('adminPlatoNombre').value;
+    datosRestaurant.platoDesc = document.getElementById('adminPlatoDesc').value;
+    datosRestaurant.precio = document.getElementById('adminPrecio').value;
+    datosRestaurant.linkMenu = document.getElementById('adminLinkMenu').value;
+    datosRestaurant.colorFondo1 = document.getElementById('adminColorFondo1').value;
+    datosRestaurant.colorFondo2 = document.getElementById('adminColorFondo2').value;
+    
+    // Las fotos ya están en datosRestaurant.fotos desde previewFoto()
+    // Solo actualizamos si hay nuevas URLs o archivos cargados
+    
+    guardarDatos();
+    actualizarUI();
+    generarQR();
+    cerrarAdmin();
+    alert('✅ Datos guardados correctamente');
+  }
+  
+  function abrirMenu() {
+    window.open(datosRestaurant.linkMenu, '_blank');
+  }
+  
+  function hacerLlamada() {
+    const telefono = datosRestaurant.telefono.replace(/[^0-9+]/g, '');
+    window.location.href = `tel:${telefono}`;
+  }
+  
+  // INICIALIZAR
+  cargarDatos();
+  if (localStorage.getItem('sesionActiva') === 'true') {
+    mostrarApp();
+  }
+</script>
+
+</body>
+</html>
